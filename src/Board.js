@@ -12,9 +12,10 @@ const wallGap = 0.01;
 const wallThickness = 0.01;
 const dividerWidth = hspacing;
 
-const PhysBoard = () => {
+const PhysBoard = ({position}) => {
+  console.log(position)
   return (<>
-    <RigidBody colliders='hull' type="fixed" position={[0, rows * diameter / 2, 0]}>
+    <RigidBody colliders='hull' type="fixed" position={[0, (rows * diameter / 2) + position[1], 0]}>
       <Box 
         args={[
           cols * (hspacing * 2 + diameter) + dividerWidth * 2, 
@@ -87,7 +88,7 @@ const BoardMesh = ({position}) => {
               key={`${colIndex}-${rowIndex}`}
               position={[
                 ((colIndex - cols / 2) * (hspacing * 2 + diameter)) + hspacing + radius,
-                ((rowIndex - rows / 2) * (vspacing * 2 + diameter)) + vspacing + radius,
+                (((rowIndex - rows / 2) * (vspacing * 2 + diameter)) + vspacing + radius),
                 0
               ]}
             />
@@ -98,40 +99,24 @@ const BoardMesh = ({position}) => {
   )
 }
 
-const Board = () => { 
+const Board = ({position}) => { 
   return (
     <>
-      <PhysBoard />
+      <PhysBoard position={position} />
       <BoardMesh 
         position={[
           0,
-          rows * diameter / 2,
+          (rows * diameter / 2) + position[1],
           wallGap
         ]} 
       />
       <BoardMesh 
         position={[
           0,
-          rows * diameter / 2,
+          (rows * diameter / 2) + position[1],
           -wallGap
         ]} 
       />
-      {/* {new Array(cols + 1).fill(0).map((col, index) => (
-        <Box args={[
-          dividerWidth,
-          rows * diameter,
-          wallGap
-        ]}
-        key={index}
-        position={[
-          (index - cols / 2) * (hspacing * 2 + diameter),
-          rows * diameter / 2,
-          0
-        ]}>
-
-          <meshNormalMaterial />
-        </Box>
-      ))} */}
     </>
   );
 };

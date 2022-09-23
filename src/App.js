@@ -1,4 +1,4 @@
-import { Box, Cylinder, OrbitControls } from '@react-three/drei';
+import { Box, Cylinder, Environment, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CylinderCollider, Debug, InstancedRigidBodies, Physics, RigidBody } from '@react-three/rapier';
 import { Controllers, Hands, useController, useInteraction, VRButton, XR, XRButton } from '@react-three/xr';
@@ -18,7 +18,7 @@ const Chips = ({color= 'green', position = [0,0,0]}) => {
         color={color}
         rotation={[0,0,0]}
         position={[
-          (index * 0.08 + position[0]) - chips.length / 2 * 0.08,
+          ((index * 0.082) - ((chips.length - 1 )/ 2 * 0.082)) + position[0],
           0.04 + position[1],
           0 + position[2]
         ]}/>))
@@ -29,27 +29,18 @@ const Chips = ({color= 'green', position = [0,0,0]}) => {
 
 const Chip = (props) => {
   const color = props.color
-  const highlightColor = 'blue'
-  const [interactive, setInteractive] = useState(true);
-  const [hovered, setHovered] = useState(false);
   const coinRef = useRef();
   const dummyCoinRef = useRef();
   const physAPI = useRef();
   const controller = useController('right');
   const heldRef = useRef(false);
-  const held = heldRef.current;
-
-  useInteraction(coinRef, 'onHover', () => {
-    setHovered(true);
-  })
-
-  useInteraction(coinRef, 'onBlur', () => {
-    setHovered(false);
-  })
+  const [held, setHeld] = useState(false);
+  const interactiveRef = useRef(true);
 
   useInteraction(coinRef, 'onSelectStart', () => {
-    if(interactive) {
+    if(interactiveRef.current) {
       heldRef.current = true
+      setHeld(true)
     }
   })
 
@@ -78,13 +69,14 @@ const Chip = (props) => {
         z: ctarget.linearVelocity.z
       })
       heldRef.current = false
-      setInteractive(false);
+      interactiveRef.current = false
+      setHeld(false)
     }
     
   })
 
   useFrame(()=>{
-    if (controller && held) {
+    if (controller && heldRef.current) {
       const ctarget = controller.controller;
       dummyCoinRef.current.position.set(
         ctarget.position.x,
@@ -102,10 +94,10 @@ const Chip = (props) => {
   return (
     <>
       <RigidBody colliders={false} {...props} ref={physAPI} type="dynamic">
-        <mesh ref={coinRef}>
+        <mesh ref={coinRef} castShadow >
           <cylinderBufferGeometry args={[0.04, 0.04, 0.01, 32]} />
           <meshStandardMaterial 
-            color={hovered ? held ? 'green' : highlightColor : held ? 'green' : color} 
+            color={color} 
             visible={!held}
             />
         </mesh>
@@ -125,7 +117,7 @@ const Chip = (props) => {
 const Floor = () => {
   return (
     <RigidBody colliders="cuboid" type="fixed">
-      <Box args={[10, 0.1, 10]} position={[0,-0.05,0]}>
+      <Box args={[10, 0.1, 10]} position={[0,-0.05,0]} >
         <meshStandardMaterial color="gray" />
       </Box>
     </RigidBody>
@@ -134,9 +126,12 @@ const Floor = () => {
 
 function App() {
   return (<>
-    <Canvas>
-      <ambientLight />
-      <pointLight position={[10, 10, 10]} />
+    <Canvas camera={{ position: [0, 2, 0.25] }}>
+    <directionalLight
+        position={[10, 10, 10]}
+        shadow-mapSize-width={1024}
+      />
+      <Environment preset="apartment" />
       <XR>
         <Physics gravity={[
           0,
@@ -144,12 +139,22 @@ function App() {
           0
         ]}>
           <Debug color="hotpink" sleepColor="yellow" scale={[1,2,1]} />
-          <Chips color='red' position={[0,0,-0.2]} />
-          <Chips color='yellow' position={[0,0,0.2]} />
+          <Chips color='red' position={[0,0.72,-0.2]} />
+          <Chips color='yellow' position={[0,.72,0.2]} />
+          <PhysBoard position={[0,0.7,0]} />
           <Floor />
-          <PhysBoard />
+          <RigidBody type="fixed">
+            <Box
+              args={[1.4, 0.7, 0.6]}
+              position={[0, 0.7 / 2, 0]}
+              castShadow
+              receiveShadow
+            >
+              <meshStandardMaterial color="grey" />
+            </Box>
+          </RigidBody>
         </Physics>
-        <Controllers />
+        <Controllers hideRaysOnBlur={true} />
       </XR>
       <OrbitControls />
     </Canvas>
