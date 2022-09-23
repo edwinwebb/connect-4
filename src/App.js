@@ -103,16 +103,16 @@ const Chip = (props) => {
     <>
       <RigidBody colliders={false} {...props} ref={physAPI} type="dynamic">
         <mesh ref={coinRef}>
-          <cylinderBufferGeometry args={[0.04, 0.04, 0.02, 32]} />
+          <cylinderBufferGeometry args={[0.04, 0.04, 0.01, 32]} />
           <meshStandardMaterial 
             color={hovered ? held ? 'green' : highlightColor : held ? 'green' : color} 
             visible={!held}
             />
         </mesh>
-        <CylinderCollider args={[0.01, 0.04]} />
+        <CylinderCollider args={[0.005, 0.04]} />
       </RigidBody>
       <mesh ref={dummyCoinRef}>
-        <cylinderBufferGeometry args={[0.04, 0.04, 0.02, 32]} />
+        <cylinderBufferGeometry args={[0.04, 0.04, 0.01, 32]} />
         <meshStandardMaterial 
           color={color} 
           visible={held}
@@ -125,7 +125,7 @@ const Chip = (props) => {
 const Floor = () => {
   return (
     <RigidBody colliders="cuboid" type="fixed">
-      <Box args={[10, 0.1, 10]} position={[0,-0.1,0]}>
+      <Box args={[10, 0.1, 10]} position={[0,-0.05,0]}>
         <meshStandardMaterial color="gray" />
       </Box>
     </RigidBody>
@@ -143,7 +143,7 @@ function App() {
           -9.81,
           0
         ]}>
-          <Debug color="red" sleepColor="blue" scale={[1,2,1]} />
+          <Debug color="hotpink" sleepColor="yellow" scale={[1,2,1]} />
           <Chips color='red' position={[0,0,-0.2]} />
           <Chips color='yellow' position={[0,0,0.2]} />
           <Floor />

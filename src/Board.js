@@ -14,37 +14,43 @@ const dividerWidth = hspacing;
 
 const PhysBoard = () => {
   return (<>
-    <RigidBody colliders={false} type="fixed" position={[0, rows * diameter / 2, 0]}>
-      <CuboidCollider 
+    <RigidBody colliders='hull' type="fixed" position={[0, rows * diameter / 2, 0]}>
+      <Box 
         args={[
-          cols * (hspacing * 2 + diameter) / 2, 
-          rows * diameter / 2, 
+          cols * (hspacing * 2 + diameter) + dividerWidth * 2, 
+          rows * diameter, 
           wallThickness
         ]}
-        position={[0,0,wallGap + wallThickness*2]} 
-      />
-      <CuboidCollider 
+        position={[0,0,wallGap]}   
+        >
+        <meshStandardMaterial transparent opacity={0} />
+      </Box>
+      <Box 
         args={[
-            cols * (hspacing * 2 + diameter) / 2, 
-            rows * diameter / 2, 
+            cols * (hspacing * 2 + diameter)  + dividerWidth * 2, 
+            rows * diameter, 
             wallThickness
           ]}
-        position={[0,0,-wallGap - wallThickness*2]} 
-      />
+        position={[0,0,-wallGap]} 
+      >
+        <meshStandardMaterial transparent opacity={0} />
+      </Box>
 
       {new Array(cols + 1).fill(0).map((col, index) => (
-        <CuboidCollider args={[
+        <Box args={[
           dividerWidth,
-          rows * diameter / 2,
+          rows * diameter,
           wallGap
         ]}
         key={index}
         position={[
-          (index - (cols) / 2) * (hspacing * 2 + diameter),
+          (index - cols / 2) * (hspacing * 2 + diameter),
           0,
           0
         ]} 
-        />
+        >
+          <meshStandardMaterial color="blue" />
+        </Box>
       ))}
     </RigidBody>
   </>
@@ -65,7 +71,7 @@ const BoardHoleSubtractor = ({position}) => {
         <cylinderGeometry args={[radius * 0.8, radius * 0.8, wallThickness * 4, 32]} />
       </Brush>
     </Subtraction>
-    <meshNormalMaterial />
+    <meshStandardMaterial color="blue" />
   </mesh>)
 }
 
@@ -110,7 +116,7 @@ const Board = () => {
           -wallGap
         ]} 
       />
-      {new Array(cols + 1).fill(0).map((col, index) => (
+      {/* {new Array(cols + 1).fill(0).map((col, index) => (
         <Box args={[
           dividerWidth,
           rows * diameter,
@@ -118,14 +124,14 @@ const Board = () => {
         ]}
         key={index}
         position={[
-          (index - (cols) / 2) * (hspacing * 2 + diameter),
+          (index - cols / 2) * (hspacing * 2 + diameter),
           rows * diameter / 2,
           0
         ]}>
 
           <meshNormalMaterial />
         </Box>
-      ))}
+      ))} */}
     </>
   );
 };
