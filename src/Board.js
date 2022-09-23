@@ -1,45 +1,46 @@
+import { Addition, Brush, Subtraction } from "@react-three/csg";
 import { Box } from "@react-three/drei";
-import { RigidBody } from "@react-three/rapier";
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
+
+const rows = 6;
+const cols = 7;
+const hspacing = 0.005;
+const vspacing = 0.001;
+const radius = 0.04;
+const diameter = radius * 2;
+const wallGap = 0.01;
+const wallThickness = 0.01;
+const dividerWidth = hspacing;
 
 const PhysBoard = () => {
-  const rows = 6;
-  const cols = 7;
-  const hspacing = 0.025;
-  const vspacing = 0;
-  const radius = 0.02;
-  const wallSize = 0.02;
-
   return (<>
-    <RigidBody colliders="cuboid" type="fixed" position={[0, rows * radius * 2, 0]}>
-      <Box
+    <RigidBody colliders={false} type="fixed" position={[0, rows * diameter / 2, 0]}>
+      <CuboidCollider 
         args={[
-          cols * (hspacing * 2 + radius * 2), 
-          rows * radius * 4, 
-          wallSize / 2
+          cols * (hspacing * 2 + diameter) / 2, 
+          rows * diameter / 2, 
+          wallThickness
         ]}
-        position={[0,0,wallSize]} 
-      >
-        <meshStandardMaterial color="blue" transparent opacity={0.4} />
-        </Box>
-      <Box 
+        position={[0,0,wallGap + wallThickness*2]} 
+      />
+      <CuboidCollider 
         args={[
-          cols * (hspacing * 2 + radius * 2), 
-          rows * radius * 4, 
-          .02
-        ]}
-      position={[0,0,-wallSize]} 
-      >
-        <meshStandardMaterial color="blue" transparent opacity={0.4} />
-      </Box>
+            cols * (hspacing * 2 + diameter) / 2, 
+            rows * diameter / 2, 
+            wallThickness
+          ]}
+        position={[0,0,-wallGap - wallThickness*2]} 
+      />
+
       {new Array(cols + 1).fill(0).map((col, index) => (
-        <Box args={[
-          .01,
-          rows * radius * 4,
-          wallSize
+        <CuboidCollider args={[
+          dividerWidth,
+          rows * diameter / 2,
+          wallGap
         ]}
         key={index}
         position={[
-          (index - (cols) / 2) * (hspacing * 2 + radius * 2),
+          (index - (cols) / 2) * (hspacing * 2 + diameter),
           0,
           0
         ]} 
@@ -50,83 +51,83 @@ const PhysBoard = () => {
   )
 }
 
-// const BoardRenderer = () => {
-//   return (
-//     <group>
-//       <mesh>
-//         <Subtraction>
-//           <Brush a position={[0,0,wallSize]}>
-//             <boxGeometry args={[
-//               cols * (hspacing * 2 + radius * 2), 
-//               rows * (vspacing * 2 + radius * 2), 
-//               wallSize / 2
-//             ]}
-//             />
-//           </Brush>
-//           <Brush a position={[0,0,-wallSize]}>
-//             <boxGeometry args={[
-//               cols * (hspacing * 2 + radius * 2), 
-//               rows * (vspacing * 2 + radius * 2), 
-//               wallSize / 2
-//             ]}
-//             />
-//           </Brush>
-//           {
-//             new Array((cols)).fill(0).map((col, colIndex) => (
-//               <>
-//                 {
-//                   new Array((rows)).fill(0).map((row, rowIndex) => (
-//                     <Brush b
-//                       position={[
-//                         ((colIndex - cols / 2) * (hspacing * 2 + radius * 2)) + hspacing + radius,
-//                         ((rowIndex - rows / 2) * (vspacing * 2 + radius * 2)) + vspacing + radius,
-//                         0
-//                       ]}
-//                       rotation={[Math.PI/2, 0, 0]}
-//                     >
-//                       <cylinderGeometry args={[radius * 0.8, radius * 0.8, wallSize * 4, 32]} />
-//                     </Brush>
-//                   ))
-//                 }
-//               </>
-//             ))
-//           }
-//         </Subtraction>
-//         <meshNormalMaterial />
-//       </mesh>
-//     </group>
-//   );
-// };
-
-
-/*
-export function BoardModel(props) {
-  const { nodes, materials } = useGLTF("/connect4.gltf");
-  return (
-    <group {...props} dispose={null}>
-      <RigidBody colliders="trimesh" type="fixed" 
-        rotation={[Math.PI / 2, 0, 0]}>
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.Board.geometry}
-        material={materials.BluePlastic}
-        scale={0.001}
-      />
-      </RigidBody>
-    </group>
-  );
+const BoardHoleSubtractor = ({position}) => {
+  return(<mesh position={position}>
+    <Subtraction>
+      <Brush a>
+        <boxGeometry args={[
+          hspacing * 2 + diameter,
+          vspacing * 2 + diameter,
+          wallThickness
+        ]} />
+      </Brush>
+      <Brush b rotation={[Math.PI/2, 0, 0]}>
+        <cylinderGeometry args={[radius * 0.8, radius * 0.8, wallThickness * 4, 32]} />
+      </Brush>
+    </Subtraction>
+    <meshNormalMaterial />
+  </mesh>)
 }
 
-useGLTF.preload("/connect4.gltf");
+const BoardMesh = ({position}) => {
+  return (
+    <group 
+      position={position}
+    >
+      {
+        Array.from({length: cols}, (_, colIndex) => (
+          Array.from({length: rows}, (_, rowIndex) => (
+            <BoardHoleSubtractor
+              key={`${colIndex}-${rowIndex}`}
+              position={[
+                ((colIndex - cols / 2) * (hspacing * 2 + diameter)) + hspacing + radius,
+                ((rowIndex - rows / 2) * (vspacing * 2 + diameter)) + vspacing + radius,
+                0
+              ]}
+            />
+          ))
+        ))
+      }
+    </group>
+  )
+}
 
 const Board = () => { 
   return (
-    <Suspense fallback={null}>
-      <BoardModel />
-    </Suspense>
+    <>
+      <PhysBoard />
+      <BoardMesh 
+        position={[
+          0,
+          rows * diameter / 2,
+          wallGap
+        ]} 
+      />
+      <BoardMesh 
+        position={[
+          0,
+          rows * diameter / 2,
+          -wallGap
+        ]} 
+      />
+      {new Array(cols + 1).fill(0).map((col, index) => (
+        <Box args={[
+          dividerWidth,
+          rows * diameter,
+          wallGap
+        ]}
+        key={index}
+        position={[
+          (index - (cols) / 2) * (hspacing * 2 + diameter),
+          rows * diameter / 2,
+          0
+        ]}>
+
+          <meshNormalMaterial />
+        </Box>
+      ))}
+    </>
   );
 };
-*/
 
-export default PhysBoard;
+export default Board;
