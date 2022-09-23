@@ -2,14 +2,14 @@ import { Box, Cylinder, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber'
 import { CylinderCollider, Debug, InstancedRigidBodies, Physics, RigidBody } from '@react-three/rapier';
 import { Controllers, Hands, useController, useInteraction, VRButton, XR, XRButton } from '@react-three/xr';
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useGLTF } from "@react-three/drei";
 import { Addition, Brush, Subtraction } from '@react-three/csg';
 import PhysBoard from './Board';
 
 // chips
 const Chips = ({color= 'green', position = [0,0,0]}) => {
-  const [chips, setChips] = useState([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+  const [chips, setChips] = useState([1,2,3]);
   return(
     <group position={position}>
      {chips.map((chip, index) => (
@@ -18,7 +18,7 @@ const Chips = ({color= 'green', position = [0,0,0]}) => {
         color={color}
         position={[
           (Math.random(0) - 0.5) * 0.01,
-          index * 0.02,
+          index * 1.02,
           (Math.random(0) - 0.5) * 0.01
         ]}/>))
       }
@@ -31,19 +31,16 @@ const Chip = (props) => {
   const highlightColor = 'blue'
   const [interactive, setInteractive] = useState(true);
   const [hovered, setHovered] = useState(false);
-  const [held, setHeld] = useState(false);
+  // const [held, setHeld] = useState(false);
   const coinRef = useRef();
+  const dummyCoinRef = useRef();
   const physAPI = useRef();
   const controller = useController('right')
+  const controller2 = useController('left')
+  const missedRef = useRef()
+  const held2 = useRef(false)
+  const held = held2.current
 
-  useInteraction(coinRef, 'onSelectStart', (e) => {
-    console.log(e)
-    if(interactive) {
-      setInteractive(false)
-
-      //coinRef.current.applyImpulse(right.velocity, right.angularVelocity);
-    }
-  })
 
   useInteraction(coinRef, 'onHover', () => {
     setHovered(true);
@@ -54,41 +51,80 @@ const Chip = (props) => {
   })
 
   useInteraction(coinRef, 'onSelectStart', () => {
-    setHeld(true);
+    if(interactive) {
+      held2.current = true
+    }
   })
 
-  useInteraction(coinRef, 'onSelectEnd', () => {
-    setHeld(false);
+  useInteraction(missedRef, 'onSelectEnd', (e) => {
+    console.log('end', held)
   })
 
-  useInteraction(coinRef, 'onSelectMissed', () => {
-    setHeld(false);
+  useInteraction(missedRef, 'onSelectMissed', (e) => {
+    if(held2.current) {
+      physAPI.current.setTranslation({
+        x: e.target.grip.position.x,
+        y: e.target.grip.position.y,
+        z: e.target.grip.position.z
+      })
+      physAPI.current.setRotation({
+        x: e.target.grip.quaternion.x,
+        y: e.target.grip.quaternion.y,
+        z: e.target.grip.quaternion.z,
+        w: e.target.grip.quaternion.w
+      })
+      physAPI.current.setAngvel({
+        x: e.target.grip.angularVelocity.x,
+        y: e.target.grip.angularVelocity.y,
+        z: e.target.grip.angularVelocity.z
+      })
+      physAPI.current.setLinvel({
+        x: e.target.grip.linearVelocity.x,
+        y: e.target.grip.linearVelocity.y,
+        z: e.target.grip.linearVelocity.z
+      })
+      held2.current = false
+      setInteractive(false);
+    }
+    
   })
 
   useFrame(()=>{
     if (controller && held) {
-      physAPI.current.setNextKinematicTranslation({
-        x: controller.grip.position.x,
-        y: controller.grip.position.y,
-        z: controller.grip.position.z
-      })  ;
-      physAPI.current.setNextKinematicRotation({
-        x: controller.grip.rotation.x,
-        y: controller.grip.rotation.y,
-        z: controller.grip.rotation.z
-      }) 
+      dummyCoinRef.current.position.set(
+        controller.grip.position.x,
+        controller.grip.position.y,
+        controller.grip.position.z
+      )
+      dummyCoinRef.current.rotation.set(
+        controller.grip.rotation.x,
+        controller.grip.rotation.y,
+        controller.grip.rotation.z
+      )
     }
   })
 
-
   return (
-    <RigidBody colliders={false} {...props} ref={physAPI} type="kinematicPosition">
-      <mesh ref={coinRef} onClick={()=>{setHeld(true)}}>
+    <>
+      <RigidBody colliders={false} {...props} ref={physAPI} type="dynamic">
+        <mesh ref={coinRef}>
+          <cylinderBufferGeometry args={[0.04, 0.04, 0.02, 32]} />
+          <meshStandardMaterial 
+            color={hovered ? held ? 'green' : highlightColor : held ? 'green' : color} 
+            visible={!held}
+            />
+        </mesh>
+        <CylinderCollider args={[0.01, 0.04]} />
+      </RigidBody>
+      <mesh ref={dummyCoinRef}>
         <cylinderBufferGeometry args={[0.04, 0.04, 0.02, 32]} />
-        <meshStandardMaterial color={hovered ? held ? 'green' : highlightColor : held ? 'green' : color} />
+        <meshStandardMaterial 
+          color={'pink'} 
+          visible={held}
+          />
       </mesh>
-      <CylinderCollider args={[0.01, 0.04]} />
-    </RigidBody>
+      <Box args={[.1,.1,.1]} ref={missedRef} position={[1,0,0]} />
+    </>
   );
 };
 
@@ -162,7 +198,7 @@ const Floor = () => {
   return (
     <RigidBody colliders="cuboid" type="fixed">
       <Box args={[10, 0.1, 10]} position={[0,-.05,0]}>
-        <meshStandardMaterial color="green" />
+        <meshStandardMaterial color="gray" />
       </Box>
     </RigidBody>
   );
@@ -176,11 +212,11 @@ function App() {
       <XR>
         <Physics gravity={[
           0,
-          -9.81/10,
+          -9.81,
           0
         ]}>
           <Debug color="red" sleepColor="blue" scale={1} />
-          <Chips color='red' position={[0,1,0]} />
+          <Chips color='red' position={[0,0,0]} />
           <Floor />
           <PhysBoard />
         </Physics>
