@@ -1,6 +1,6 @@
-import { Addition, Brush, Subtraction } from "@react-three/csg";
+import { Brush, Subtraction } from "@react-three/csg";
 import { Box } from "@react-three/drei";
-import { CuboidCollider, RigidBody } from "@react-three/rapier";
+import { RigidBody } from "@react-three/rapier";
 
 const rows = 6;
 const cols = 7;

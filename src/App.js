@@ -1,10 +1,8 @@
-import { Box, Cylinder, Environment, OrbitControls } from '@react-three/drei';
+import { Box, Environment, OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber'
-import { CylinderCollider, Debug, InstancedRigidBodies, Physics, RigidBody } from '@react-three/rapier';
-import { Controllers, Hands, useController, useInteraction, VRButton, XR, XRButton } from '@react-three/xr';
-import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
-import { useGLTF } from "@react-three/drei";
-import { Addition, Brush, Subtraction } from '@react-three/csg';
+import { CylinderCollider, Debug, Physics, RigidBody } from '@react-three/rapier';
+import { Controllers, useController, useInteraction, VRButton, XR } from '@react-three/xr';
+import React, { useState, useRef } from 'react';
 import PhysBoard from './Board';
 
 // chips
